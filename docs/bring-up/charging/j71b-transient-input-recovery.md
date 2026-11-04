@@ -79,3 +79,15 @@ verification. Its J71b DTB includes the USB-role link. All baseline exported
 symbol CRCs are still present and unchanged; the original module tree and
 initrd were retained. A separate v2 kernel/DTB directory and BLS entry are
 staged, preserving both previous entries. This v2 has not yet booted.
+
+## Natural transient follow-up
+
+A later 60-second capture on the installed-base candidate, without any
+manual reset, recorded 16 non-ready 0x62 reads and returns to 0x42. Normal
+reidentification and ramp writes resumed repeatedly, including 16 writes
+of the 2.4 A code. This provides hardware evidence for automatic recovery
+instead of the old permanently stuck fallback. It does not resolve why
+the non-ready status recurs: current still fluctuated and some samples
+showed slight discharge. Capacity rose from 88% to 91%, temperature was
+about 25.1 C and health Good. USB data remained temporarily unbound.
+The trace instance and dynamic debug were cleaned up after capture.
