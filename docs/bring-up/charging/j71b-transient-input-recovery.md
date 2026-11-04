@@ -31,8 +31,8 @@ apply. A latched fault remains latched, and repeated non-ready polls do not
 repeatedly restart attachment.
 
 The change is in the shared Tristar driver: other boards using that driver
-also need validation. Device-side testing of the candidate kernel is pending;
-only the old-kernel failure and temporary rebind recovery have been observed.
+also need validation. The installed-base candidate has booted on J71b;
+the upstream-adapted candidate still needs its own device validation.
 The compiled C regression tests exercise the actual added helper with the
 42/62/42 sequence, persistent non-ready input, a ramp in progress, latched
 faults, first attachment, a lower existing limit, USB grant invalidation and
@@ -41,3 +41,41 @@ epoch wraparound.
 The curated CHANGELOG is unchanged. Proposed Unreleased entry: recover source
 identification after a transient Tristar input status instead of remaining at
 the fallback input limit.
+
+## Installed-base hardware follow-up (2026-11-04)
+
+The candidate built from `dc0b2c1` booted using an additional BLS entry.
+The original kernel, entry, initrd and DTB were preserved. The candidate
+image digest and running kernel notes matched. Host tests passed 449 tests;
+the Linux container passed 449 tests with one environment skip.
+
+Moving from the Mac to the wall adapter exposed another existing issue:
+USB suspend/resume reports still represented a USB session. The driver logged
+`USB host allows 2 mA`, selected SDP and kept 500 mA. One charger rebind
+repeated the same result. The upstream USB-role changes in power patch 0016
+and the matching device-tree/controller changes address this separate case;
+the installed-base candidate does not include them.
+
+For a temporary wall-charge-only diagnostic, USB gadget data was unbound
+over Wi-Fi, with its prior binding recorded privately for restoration, then
+the charger was rebound once. Source identification reported BrickID 2.4 A
+and the normal driver ramp reached 2.4 A. In 24 samples over 120 seconds,
+net pack current was approximately 1.06-1.23 A into the battery, health Good
+and temperature about 25 C. Existing-access tracing saw only ready status
+0x42 during this window: it did not reproduce the 0x62 transition, so
+this does not yet prove the new transient recovery path on hardware.
+
+USB data is temporarily disabled for that wall-charge diagnostic; Wi-Fi
+remains available. This workaround is not an image default or a permanent
+repair. It must be restored before expecting Linux USB data connectivity.
+The next candidate combines the current upstream USB-role handling with
+patch 0019 and its matching J71b DTB; it requires a new build and DFU test.
+
+That second candidate, built from the upstream-adapted `70db4d4`, passed
+521 Linux-container tests (one environment skip) and a standard Orchard
+source build. The published tools asset failed its checksum, so the build
+used the supported `ORCHARD_PUBLISHED=off` source path without bypassing
+verification. Its J71b DTB includes the USB-role link. All baseline exported
+symbol CRCs are still present and unchanged; the original module tree and
+initrd were retained. A separate v2 kernel/DTB directory and BLS entry are
+staged, preserving both previous entries. This v2 has not yet booted.
