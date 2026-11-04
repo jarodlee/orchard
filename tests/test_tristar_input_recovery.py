@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
         assert(c.code==34&&c.input_unstable&&withdrawals==1&&!attachments);
         assert(!tristar_input_ready(&c,0x42,204));
         assert(attachments==1&&c.phase==TRISTAR_SETTLING&&attach_time==204);
-        assert(c.usb_epoch!=c.epoch&&c.usb_ma==500);
+        assert(c.usb_epoch!=c.epoch);
     } else if(!strcmp(argv[1],"repeated")) {
         for(unsigned i=0;i<100;i++) assert(!tristar_input_ready(&c,0x62,i));
         assert(withdrawals==1&&!attachments);
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
         c.epoch=0; c.usb_epoch=0;
         assert(!tristar_input_ready(&c,0x62,1));
         assert(!tristar_input_ready(&c,0x42,2));
-        assert(c.usb_epoch==UINT_MAX&&c.usb_ma==500);
+        assert(c.usb_epoch==UINT_MAX);
     } else return 2;
     return 0;
 }

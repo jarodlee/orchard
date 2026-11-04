@@ -24,7 +24,7 @@ Signed-off-by: Jarod Lee (MacMini) <lee.jarod@gmail.com>
  1 file changed, 25 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/power/supply/apple_tristar_charger.c b/drivers/power/supply/apple_tristar_charger.c
-index 3b53fe1..6c19dcf 100644
+index 3b53fe1..63212dd 100644
 --- a/drivers/power/supply/apple_tristar_charger.c
 +++ b/drivers/power/supply/apple_tristar_charger.c
 @@ -136,6 +136,7 @@ struct tristar_charger {
@@ -50,8 +50,8 @@ index 3b53fe1..6c19dcf 100644
 +/*
 + * A non-ready input must lose its grant. Once it is ready again, identify
 + * it afresh: the old allowance may belong to a source replaced during the
-+ * transient. Keep the USB session marker so identification cannot disturb
-+ * live data lines, but invalidate that session's previous current grant.
++ * transient. Invalidate the old USB current grant and let the normal
++ * attachment routine apply its USB data-line policy.
 + * Caller holds lock; a latched fault must remain latched.
 + */
 +static bool tristar_input_ready(struct tristar_charger *chg, unsigned int status,
