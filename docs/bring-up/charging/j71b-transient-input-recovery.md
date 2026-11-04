@@ -24,7 +24,8 @@ strict ready-status check rather than mask that bit or force a current limit.
 
 Patch 0019 remembers a non-ready input. Once the input is ready, it restarts
 source identification rather than resuming the cached current allowance. The
-previous USB allowance is invalidated while its data-session marker is kept.
+previous USB allowance is invalidated, and the normal attachment routine handles
+USB data-line policy.
 Identification, the board maximum, battery checks and the normal ramp still
 apply. A latched fault remains latched, and repeated non-ready polls do not
 repeatedly restart attachment.

@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: "Jarod Lee (MacMini)" <lee.jarod@gmail.com>
-Date: Wed, 4 Nov 2026 09:20:05 +0800
+Date: Wed, 4 Nov 2026 09:31:24 +0800
 Subject: [PATCH] power: supply: apple_tristar_charger: reidentify after a
  transient input
 
@@ -12,8 +12,8 @@ at 500 mA while CURRENT_MAX still reported 2400 mA, sometimes draining
 the battery even with the display off.
 
 Remember a non-ready input and start a fresh attachment once it is ready
-again. Invalidate any old USB current allowance, retaining the USB data
-session marker. This keeps the existing strict status check, source
+again. Invalidate any old USB current allowance and retain the normal
+attachment routine's USB data-line policy. This keeps the existing strict status check, source
 identification, board maximum and battery ramp checks; it does not raise
 a current based only on a cached source. Repeated non-ready reads do not
 restart identification, and latched faults remain latched.
@@ -24,10 +24,10 @@ Signed-off-by: Jarod Lee (MacMini) <lee.jarod@gmail.com>
  1 file changed, 25 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/power/supply/apple_tristar_charger.c b/drivers/power/supply/apple_tristar_charger.c
-index 3b53fe1..6c19dcf 100644
+index 19a32c6..a3ce566 100644
 --- a/drivers/power/supply/apple_tristar_charger.c
 +++ b/drivers/power/supply/apple_tristar_charger.c
-@@ -136,6 +136,7 @@ struct tristar_charger {
+@@ -145,6 +145,7 @@ struct tristar_charger {
  	enum tristar_phase phase;
  	bool online;
  	bool present;
@@ -35,23 +35,23 @@ index 3b53fe1..6c19dcf 100644
  	bool stopping;
  	unsigned int code;	/* last verified input limit */
  	unsigned int target_code;
-@@ -670,6 +671,7 @@ static void tristar_update_target(struct tristar_charger *chg)
- static void tristar_new_attachment(struct tristar_charger *chg, u64 now)
- {
+@@ -694,6 +695,7 @@ static void tristar_new_attachment(struct tristar_charger *chg, u64 now)
+ 	/* Before anything else: a host must not start a session yet. */
+ 	tristar_set_usb(chg, false);
  	chg->present = true;
 +	chg->input_unstable = false;
  	chg->phase = TRISTAR_SETTLING;
  	chg->attach_ns = now;
- 	chg->source[0] = '\0';
-@@ -862,6 +864,28 @@ static void tristar_guard(struct tristar_charger *chg, u64 now)
+ 	chg->hold_ns = now;
+@@ -890,6 +892,28 @@ static void tristar_guard(struct tristar_charger *chg, u64 now)
  	}
  }
  
 +/*
 + * A non-ready input must lose its grant. Once it is ready again, identify
 + * it afresh: the old allowance may belong to a source replaced during the
-+ * transient. Keep the USB session marker so identification cannot disturb
-+ * live data lines, but invalidate that session's previous current grant.
++ * transient. Invalidate the old USB current grant and let the normal
++ * attachment routine apply its USB data-line policy.
 + * Caller holds lock; a latched fault must remain latched.
 + */
 +static bool tristar_input_ready(struct tristar_charger *chg, unsigned int status,
@@ -72,7 +72,7 @@ index 3b53fe1..6c19dcf 100644
  static void tristar_poll(struct work_struct *work)
  {
  	struct tristar_charger *chg = container_of(to_delayed_work(work),
-@@ -895,12 +919,8 @@ static void tristar_poll(struct work_struct *work)
+@@ -924,12 +948,8 @@ static void tristar_poll(struct work_struct *work)
  		}
  		goto again;
  	}
